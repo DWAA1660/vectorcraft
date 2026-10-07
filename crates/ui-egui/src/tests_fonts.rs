@@ -78,3 +78,80 @@ fn the_character_panel_menu_refreshes_the_font_list() {
     let text = crate::tests_labels::painted_text(&mut app, crate::panels::character::menu);
     assert!(text.contains("Refresh Font List") && !text.contains("System Fonts"), "{text}");
 }
+
+#[test]
+fn browsing_previews_keeps_the_document_unchanged_and_clicking_the_sample_applies_the_font() {
+    let mut app = VectorcraftApp::new(Session::new(), Default::default());
+    app.run("file.new", json!({})).unwrap();
+    app.run("text.create", json!({"x": 10, "y": 40, "text": "Holiday Blend", "font": "Inter"})).unwrap();
+    app.session.doc_mut().unwrap().mark_saved();
+    let journal = app.session.journal.len();
+    let ctx = egui::Context::default();
+    crate::theme::install_fonts(&ctx);
+    let frame = |app: &mut VectorcraftApp, events| {
+        let input =
+            egui::RawInput { events, screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(700.0, 800.0))), ..Default::default() };
+        let mut out = ctx.run_ui(input, |ui| {
+            ui.set_width(260.0);
+            crate::panels::character::show(app, ui);
+        });
+        out.textures_delta.clear();
+        out
+    };
+    let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+    let open = |app: &mut VectorcraftApp| {
+        let pos = egui::pos2(45.0, 20.0);
+        frame(app, vec![egui::Event::PointerMoved(pos), button(pos, true)]);
+        frame(app, vec![button(pos, false)]);
+        for _ in 0..30 {
+            frame(app, vec![]);
+        }
+        frame(app, vec![egui::Event::Text("source serif".into())]);
+        for _ in 0..30 {
+            frame(app, vec![]);
+        }
+        frame(app, vec![])
+    };
+    frame(&mut app, vec![]);
+    let out = open(&mut app);
+    let sample_pos = out
+        .shapes
+        .iter()
+        .find_map(|s| match &s.shape {
+            egui::epaint::Shape::Text(t) if t.galley.text() == "Source Serif 4" => Some(t.pos + egui::vec2(220.0, 5.0)),
+            _ => None,
+        })
+        .expect("the filtered font row is visible");
+    assert!(
+        out.shapes.iter().any(|s| matches!(&s.shape, egui::epaint::Shape::Mesh(m) if m.texture_id != egui::TextureId::default())),
+        "preview image painted beside the name"
+    );
+    frame(&mut app, vec![egui::Event::PointerMoved(sample_pos)]);
+    assert_eq!(crate::panels::character::text_style(&app).unwrap().0.font_family, "Inter");
+    assert!(!app.session.doc().unwrap().is_dirty());
+    assert_eq!(app.session.journal.len(), journal);
+    let escape = egui::Event::Key { key: egui::Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
+    frame(&mut app, vec![escape]);
+    assert!(!egui::Popup::is_any_open(&ctx));
+    assert!(!app.session.doc().unwrap().is_dirty());
+    frame(
+        &mut app,
+        vec![egui::Event::Key { key: egui::Key::Escape, physical_key: None, pressed: false, repeat: false, modifiers: Default::default() }],
+    );
+    let out = open(&mut app);
+    let sample_pos = out
+        .shapes
+        .iter()
+        .find_map(|s| match &s.shape {
+            egui::epaint::Shape::Text(t) if t.galley.text() == "Source Serif 4" => Some(t.pos + egui::vec2(220.0, 5.0)),
+            _ => None,
+        })
+        .expect("the reopened font row is visible");
+    frame(&mut app, vec![egui::Event::PointerMoved(sample_pos), button(sample_pos, true)]);
+    frame(&mut app, vec![button(sample_pos, false)]);
+    assert_eq!(crate::panels::character::text_style(&app).unwrap().0.font_family, "Source Serif 4");
+    assert_eq!(app.session.journal.len(), journal + 1);
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(crate::panels::character::text_style(&app).unwrap().0.font_family, "Inter");
+    assert!(!app.session.doc().unwrap().is_dirty());
+}

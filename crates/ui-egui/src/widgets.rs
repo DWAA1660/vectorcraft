@@ -474,6 +474,17 @@ fn combo<R>(
 /// field over the list that filters it as you type (Enter picks the first match). Returns the
 /// chosen family.
 pub fn font_dropdown(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, current: &str, width: f32) -> Option<String> {
+    font_dropdown_sample(ui, id, current, width, &crate::font_preview::FontSample::default())
+}
+
+/// [`font_dropdown`] with the selected text as the sample beside each font name.
+pub(crate) fn font_dropdown_sample(
+    ui: &mut Ui,
+    id: impl std::hash::Hash + std::fmt::Debug,
+    current: &str,
+    width: f32,
+    sample: &crate::font_preview::FontSample,
+) -> Option<String> {
     let state = ui.id().with(&id).with("font-search");
     combo(ui, id, current, width, true, |ui| {
         // Each time the list opens: unfiltered, with the current font in view. Typing goes to the
@@ -502,7 +513,7 @@ pub fn font_dropdown(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, cu
         menu_scroll(ui, |ui| {
             for f in families.iter().filter(|f| query.is_empty() || f.to_lowercase().contains(&query)) {
                 first.get_or_insert(f);
-                let r = ui.add(egui::Button::selectable(f == current, f.as_str()));
+                let r = crate::font_preview::row(ui, f, f == current, sample);
                 if opening && f == current {
                     r.scroll_to_me(Some(egui::Align::Center));
                 }

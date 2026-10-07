@@ -382,7 +382,8 @@ pub fn type_sections(app: &mut VectorcraftApp, ui: &mut Ui) {
     };
     let s = tx.first_style();
     section_header(ui, tl!("Character"));
-    if let Some(f) = widgets::font_dropdown(ui, "font", &s.font_family, ui.available_width() - 4.0) {
+    let sample = crate::font_preview::selection_sample(app);
+    if let Some(f) = widgets::font_dropdown_sample(ui, "font", &s.font_family, ui.available_width() - 4.0, &sample) {
         app.run("text.setStyle", json!({ "font": f })).ok();
     }
     ui.horizontal(|ui| {

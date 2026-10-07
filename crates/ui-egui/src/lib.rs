@@ -23,6 +23,7 @@ pub mod cursors;
 pub mod dialogs;
 pub mod dock;
 pub mod find_font;
+mod font_preview;
 pub mod i18n;
 pub mod icon_data;
 pub mod icons;

@@ -199,7 +199,8 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         .color(t.text_dim),
     );
     ui.horizontal(|ui| {
-        if let Some(f) = widgets::font_dropdown(ui, "gl-family", &family, (w * 0.6).max(80.0)) {
+        let sample = crate::font_preview::FontSample { style: "Regular".into(), ..crate::font_preview::selection_sample(app) };
+        if let Some(f) = widgets::font_dropdown_sample(ui, "gl-family", &family, (w * 0.6).max(80.0), &sample) {
             let st = db.face(&f, "Regular").map_or_else(|| "Regular".into(), |face| face.style.clone());
             set_pstate(ui.ctx(), "gl-font", Some((f, st)));
         }

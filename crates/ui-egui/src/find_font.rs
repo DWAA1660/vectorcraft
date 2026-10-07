@@ -71,7 +71,8 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
             widgets::subheader(ui, tl!("Replace With Font"));
             let fam = d.str("family");
             ui.horizontal(|ui| {
-                if let Some(f) = widgets::font_dropdown(ui, "ff-family", &fam, 220.0) {
+                let sample = crate::font_preview::FontSample { style: "Regular".into(), ..crate::font_preview::selection_sample(app) };
+                if let Some(f) = widgets::font_dropdown_sample(ui, "ff-family", &fam, 220.0, &sample) {
                     d.fields.insert("family".into(), json!(f));
                     d.fields.insert("style".into(), json!(""));
                 }

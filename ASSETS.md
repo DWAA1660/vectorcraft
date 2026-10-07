@@ -308,6 +308,8 @@ Generated-in-code art is original and has no file to list. This covers the defau
 | `assets/icons/x.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
 | `assets/icons/zoom-in.svg` | Lucide Icons and Contributors | https://lucide.dev (lucide-static v1.49.0; header kept in file) | ISC; derived from Feather, also MIT (`assets/icons/LICENSE-lucide.txt`) |  |
 | `docs/images/dusk-poster.png` | VectorCraft contributors | Rendered by VectorCraft from `examples/dusk-poster.vectorcraft` | MIT OR Apache-2.0 |  |
+| `docs/images/font-picker-preview.png` | VectorCraft contributors (DWAA1660) | [VectorCraft](https://github.com/storytold/vectorcraft), screenshot displaying previews of synthetic Holiday Blend text in the font picker | MIT OR Apache-2.0 | Issue #358; generated with ui.screenshot |
+| `docs/images/font-picker-applied.png` | VectorCraft contributors (DWAA1660) | [VectorCraft](https://github.com/storytold/vectorcraft), screenshot after selecting Source Serif 4 for synthetic Holiday Blend text | MIT OR Apache-2.0 | Issue #358; generated with ui.screenshot |
 | `examples/dusk-poster.vectorcraft` | VectorCraft contributors | Original artwork built through the VectorCraft command API | MIT OR Apache-2.0 |  |
 | `examples/dusk-poster.svg` | VectorCraft contributors | SVG export of the above | MIT OR Apache-2.0 |  |
 | `docs/images/shot-1-neon.png` | VectorCraft contributors | Screenshot of VectorCraft itself (VectorCraft/Lucide UI icons only), editing `examples/neon-drive.vectorcraft` | MIT OR Apache-2.0 |  |

@@ -2449,6 +2449,7 @@ fn menu_body(app: &VectorcraftApp, ui: &mut egui::Ui, items: &[Item], clicked: &
 /// room for one).
 fn render_items(app: &VectorcraftApp, ui: &mut egui::Ui, items: &[Item], checks: bool, clicked: &mut Option<(String, Value)>) {
     let t = Tokens::get(ui.ctx());
+    let mut font_sample = None;
     for it in items {
         match it {
             Item::Sep => {
@@ -2486,7 +2487,14 @@ fn render_items(app: &VectorcraftApp, ui: &mut egui::Ui, items: &[Item], checks:
                     Some(false) => format!("     {label}"),
                     None => label,
                 };
-                let r = ui.add_enabled(en, egui::Button::new(text).shortcut_text(sc));
+                let r = if *id == "text.setStyle"
+                    && let Some(family) = p.get("font").and_then(Value::as_str)
+                {
+                    let sample = font_sample.get_or_insert_with(|| crate::font_preview::selection_sample(app));
+                    ui.add_enabled_ui(en, |ui| crate::font_preview::row(ui, family, chk == Some(true), sample)).inner
+                } else {
+                    ui.add_enabled(en, egui::Button::new(text).shortcut_text(sc))
+                };
                 if r.clicked() {
                     *clicked = Some(click_target(label_of(it), id, p));
                     ui.close();
