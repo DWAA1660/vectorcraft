@@ -178,6 +178,7 @@ fn structured_junk() {
     let cases: Vec<(&str, Value)> = vec![
         ("select.set", json!({"ids": [0, u64::MAX, -1, "x", null, 1.5]})),
         ("select.add", json!({"ids": [[1], {"a": 1}]})),
+        ("select.toggle", json!({"ids": [0, u64::MAX, -1, "x", null, 1.5, 0]})),
         ("select.anchors", json!({"id": 2, "anchors": [[99, 99], [-1, 0], ["a", "b"]], "mode": "set"})),
         ("select.anchorsMany", json!({"items": [{"id": 2, "anchors": [[0, 1000]]}, null, 5]})),
         ("object.transform", json!({"matrix": [0, 0, 0, 0, 0, 0]})),

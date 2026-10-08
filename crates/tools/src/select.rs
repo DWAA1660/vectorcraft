@@ -49,7 +49,7 @@ enum State {
     Marquee {
         start: Point,
         cur: Point,
-        add: bool,
+        toggle: bool,
     },
     /// Dragging a Live Corners widget.
     Corner(CornerDrag),
@@ -256,7 +256,7 @@ impl Tool for SelectionTool {
                         out
                     }
                     None => {
-                        self.state = State::Marquee { start: p, cur: p, add: m.shift };
+                        self.state = State::Marquee { start: p, cur: p, toggle: m.shift };
                         vec![]
                     }
                 }
@@ -299,8 +299,8 @@ impl Tool for SelectionTool {
                 self.measure = cx.transform_tools_guides.then(|| (p, format!("{:.1}°", -deg)));
                 vec![Action::Preview("object.transform".into(), json!({ "matrix": matrix_json(a), "copy": false }))]
             }
-            (PointerKind::Drag, State::Marquee { start, add, .. }) => {
-                self.state = State::Marquee { start, cur: p, add };
+            (PointerKind::Drag, State::Marquee { start, toggle, .. }) => {
+                self.state = State::Marquee { start, cur: p, toggle };
                 vec![]
             }
             (PointerKind::Drag, State::Corner(mut c)) => {
@@ -339,15 +339,15 @@ impl Tool for SelectionTool {
                 self.targets = None;
                 vec![Action::Commit]
             }
-            (PointerKind::Up, State::Marquee { start, add, .. }) => {
+            (PointerKind::Up, State::Marquee { start, toggle, .. }) => {
                 self.state = State::Idle;
                 let r = Rect::from_points(start, p);
                 if r.width() < Self::drag_threshold(cx) && r.height() < Self::drag_threshold(cx) {
-                    return if add { vec![] } else { vec![Action::Exec("select.none".into(), json!({}))] };
+                    return if toggle { vec![] } else { vec![Action::Exec("select.none".into(), json!({}))] };
                 }
                 let ids: Vec<NodeId> = marquee(cx.doc, r, cx.isolation, false);
-                if add {
-                    vec![Action::Exec("select.add".into(), json!({ "ids": json_ids(&ids) }))]
+                if toggle {
+                    vec![Action::Exec("select.toggle".into(), json!({ "ids": json_ids(&ids) }))]
                 } else {
                     vec![Action::Exec("select.set".into(), json!({ "ids": json_ids(&ids) }))]
                 }
@@ -554,6 +554,21 @@ mod tests {
         assert_eq!(t.overlays(&cx).len(), 1);
         let a = t.pointer(&cx, &ev(PointerKind::Up, 120.0, 120.0));
         assert_eq!(a, vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))]);
+    }
+
+    #[test]
+    fn shift_marquee_emits_one_batch_toggle() {
+        let (d, id) = doc_with_rect();
+        let mut s = Selection::default();
+        s.add(id);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let shift = |kind, x, y| ev(kind, x, y).with_mods(Mods { shift: true, ..Mods::default() });
+        let mut t = SelectionTool::default();
+        assert!(t.pointer(&cx, &shift(PointerKind::Down, 50.0, 50.0)).is_empty());
+        t.pointer(&cx, &shift(PointerKind::Drag, 230.0, 230.0));
+        assert_eq!(t.pointer(&cx, &shift(PointerKind::Up, 230.0, 230.0)), vec![Action::Exec("select.toggle".into(), json!({"ids": [id.0]}))]);
+        assert!(!t.busy());
     }
 
     #[test]

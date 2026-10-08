@@ -798,6 +798,15 @@ branch sets all of it. `paint.sampleColor {color}` puts a sampled colour (in its
 {"name":"run_command","arguments":{"command":"appearance.copyFrom","params":{"source":12,"ids":[7,8]}}}
 ```
 
+## Selection tool: Shift-box selection
+
+With the Selection tool, hold Shift and drag a selection box to toggle the objects it reaches:
+selected objects leave the selection, unselected objects join it, and objects outside the box keep
+their selection. A Shift-click on empty canvas keeps the selection; a box without Shift replaces it.
+Agents can use `pointer_gesture` with `mods: {shift: true}` for the same gesture, or execute
+`select.toggle {ids: [id, ...]}` to toggle several objects together. The existing `select.toggle {id}`
+form still toggles a single object. Repeated ids in a batch toggle only once.
+
 ## The Layers panel: rows, layers and sublayers
 
 Every layer, sublayer, group and object is a row of the Layers panel. Sublayers are layers inside layers: they are not

@@ -27,7 +27,7 @@ pub fn specs() -> Vec<CommandSpec> {
         cmd!("select.nextBelow", "Next Object Below", ["Select"], Some("Cmd+Alt+["), "{}", has_selection, |s, _| step(s, -1)),
         cmd!("select.set", "Select Objects", [], None, "{ids: [id…]}", has_doc, set),
         cmd!("select.add", "Add to Selection", [], None, "{ids: [id…]}", has_doc, add),
-        cmd!("select.toggle", "Toggle Selection", [], None, "{id}", has_doc, toggle),
+        cmd!("select.toggle", "Toggle Selection", [], None, "{id} or {ids: [id…]} (each distinct id toggles once)", has_doc, toggle),
         cmd!("select.key", "Set Key Object", [], None, "{id?} (none clears)", has_doc, key),
         cmd!("select.anchors", "Select Anchors", [], None, "{id, anchors: [[subpath, anchor]…], mode: \"set\"|\"add\"|\"toggle\"}", has_doc, anchors),
         cmd!("select.anchorsMany", "Select Anchors", [], None, "{items: [{id, anchors}], add?: bool}", has_doc, anchors_many),
@@ -217,8 +217,15 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn toggle(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = id_param(p, "id").ok_or_else(|| bad("select.toggle", "missing id"))?;
-    s.select(|_, sel| sel.toggle(id))?;
+    let ids = id_param(p, "id").map(|id| vec![id]).or_else(|| ids_param(p, "ids")).ok_or_else(|| bad("select.toggle", "missing id or ids"))?;
+    s.select(|_, sel| {
+        let mut seen = BTreeSet::new();
+        for id in ids {
+            if seen.insert(id) {
+                sel.toggle(id);
+            }
+        }
+    })?;
     ok()
 }
 

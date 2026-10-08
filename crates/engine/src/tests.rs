@@ -14,6 +14,62 @@ fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64) -> NodeId {
     NodeId(r["id"].as_u64().unwrap())
 }
 
+/// #483: Shift-box selection removes selected objects and adds unselected ones,
+/// without changing objects outside the box.
+#[test]
+fn shift_box_selection_toggles_objects() {
+    use vectorcraft_tools::Mods;
+
+    let mut s = session();
+    let a = rect(&mut s, 100.0, 100.0, 40.0, 40.0);
+    let b = rect(&mut s, 250.0, 100.0, 40.0, 40.0);
+    let c = rect(&mut s, 400.0, 100.0, 40.0, 40.0);
+    let v = ViewInfo::default();
+    s.select_tool("selection", v).unwrap();
+    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
+    let box_select = |s: &mut Session, shift, end_x| {
+        for (kind, x, y) in [(PointerKind::Down, 220.0, 60.0), (PointerKind::Drag, end_x, 180.0), (PointerKind::Up, end_x, 180.0)] {
+            s.pointer(&PointerEvent::new(kind, x, y).with_mods(Mods { shift, ..Mods::default() }), v).unwrap();
+        }
+    };
+    // Only b is covered: keep a, remove b.
+    box_select(&mut s, true, 320.0);
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
+    // Repeat the same box: b rejoins the selection.
+    box_select(&mut s, true, 320.0);
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a, b]);
+    // Cover selected b and unselected c together: toggle both, keep a.
+    box_select(&mut s, true, 470.0);
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a, c]);
+    // Shift-click empty canvas preserves the selection.
+    for kind in [PointerKind::Down, PointerKind::Up] {
+        s.pointer(&PointerEvent::new(kind, 600.0, 400.0).with_mods(Mods { shift: true, ..Mods::default() }), v).unwrap();
+    }
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a, c]);
+    // Without Shift, the box replaces the selection as before.
+    box_select(&mut s, false, 320.0);
+    assert_eq!(s.doc().unwrap().selection.objects, vec![b]);
+}
+
+#[test]
+fn toggle_selection_accepts_batches_and_legacy_id() {
+    let mut s = session();
+    let a = rect(&mut s, 100.0, 100.0, 40.0, 40.0);
+    let b = rect(&mut s, 250.0, 100.0, 40.0, 40.0);
+    let c = rect(&mut s, 400.0, 100.0, 40.0, 40.0);
+    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
+    s.execute("select.key", &json!({"id": a.0})).unwrap();
+    s.execute("select.toggle", &json!({"ids": [b.0, c.0, b.0, c.0]})).unwrap();
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a, c]);
+    assert_eq!(s.doc().unwrap().selection.key, Some(a));
+    s.execute("select.toggle", &json!({"id": a.0})).unwrap();
+    assert_eq!(s.doc().unwrap().selection.objects, vec![c]);
+    assert_eq!(s.doc().unwrap().selection.key, None);
+    s.execute("select.toggle", &json!({"ids": []})).unwrap();
+    assert_eq!(s.doc().unwrap().selection.objects, vec![c]);
+    assert!(s.execute("select.toggle", &json!({})).is_err());
+}
+
 #[test]
 fn create_and_undo_redo() {
     let mut s = session();
